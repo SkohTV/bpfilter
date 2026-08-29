@@ -23,9 +23,11 @@
 #include <limits.h>
 #include <math.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "asm-generic/errno-base.h"
 #include "bpfilter/dump.h"
 #include "bpfilter/helper.h"
 #include "bpfilter/hook.h"
@@ -47,7 +49,7 @@ extern const char *inet_ntop(int, const void *, char *, socklen_t);
 /**
  * Matcher definition.
  *
- * Matchers are criterias to match the packet against. A set of matcher defines
+ * Matchers are criterias to match the packet against. A set of bf_matcher_limit defines
  * what a rule should match on.
  *
  * @todo `bf_matcher`'s payload should be a union of all the possible payload
@@ -408,30 +410,37 @@ static void _bf_print_probability(const void *payload)
         (void)fprintf(stdout, "%g%%", proba);
 }
 
-static int _bf_parse_ratelimit(enum bf_matcher_type type, enum bf_matcher_op op,
-                               void *payload, const char *raw_payload)
+static int _bf_parse_limit(enum bf_matcher_type type, enum bf_matcher_op op,
+                              void *payload, const char *raw_payload)
 {
     assert(payload);
     assert(raw_payload);
 
-    int r;
+    uint16_t limit;
+    char *endptr;
 
-    r = bf_if_index_from_str(raw_payload, (uint32_t *)payload);
-    if (r) {
-        return bf_err_r(
-            r, "\"%s %s\" Blabla error message something something, not '%s'",
-            bf_matcher_type_to_str(type), bf_matcher_op_to_str(op),
-            raw_payload);
+    (void)op;
+
+    limit = strtoul(raw_payload, &endptr, BF_BASE_10);
+    if (endptr[0] == '/' && endptr[1] == 's' && limit > 0 && limit <= UINT16_MAX) {
+        // Maybe a struct is better
+        *(uint32_t *)payload = (uint32_t)(limit + ((uint32_t)endptr[1] << 16));
+        return 0;
     }
 
-    return 0;
+    bf_err(
+        "\"%s\" expect a number and a time unit (the only time unit as of now is 's', e.g., 20/s), not '%s'",
+        bf_matcher_type_to_str(type), raw_payload
+    );
+
+    return -EINVAL;
 }
 
-static void _bf_print_ratelimit(const void *payload)
+static void _bf_print_limit(const void *payload)
 {
     assert(payload);
 
-    (void)fprintf(stdout, "%" PRIu32, *(uint32_t *)payload);
+    (void)fprintf(stdout, "%d/%c" PRIu32, *(uint16_t *)payload, *(uint32_t *)(payload) >> 16);
 }
 
 static int _bf_parse_mark(enum bf_matcher_type type, enum bf_matcher_op op,
@@ -950,14 +959,13 @@ static struct bf_matcher_meta _bf_matcher_metas[_BF_MATCHER_TYPE_MAX] = {
                                    _bf_print_probability),
                 },
         },
-    [BF_MATCHER_META_RATELIMIT] =
+    [BF_MATCHER_META_LIMIT] =
         {
             .layer = BF_MATCHER_NO_LAYER,
-            // Not sure if we need unsupported_hooks
             .ops =
                 {
                     BF_MATCHER_OPS(BF_MATCHER_EQ, sizeof(uint32_t),
-                                   _bf_parse_ratelimit, _bf_print_ratelimit),
+                                   _bf_parse_limit, _bf_print_limit),
                 },
         },
     [BF_MATCHER_IP4_SADDR] =
@@ -1509,7 +1517,7 @@ static const char *_bf_matcher_type_strs[] = {
     [BF_MATCHER_META_MARK] = "meta.mark",
     [BF_MATCHER_META_FLOW_HASH] = "meta.flow_hash",
     [BF_MATCHER_META_FLOW_PROBABILITY] = "meta.flow_probability",
-    [BF_MATCHER_META_RATELIMIT] = "meta.ratelimit",
+    [BF_MATCHER_META_LIMIT] = "meta.limit",
     [BF_MATCHER_IP4_SADDR] = "ip4.saddr",
     [BF_MATCHER_IP4_SNET] = "ip4.snet",
     [BF_MATCHER_IP4_DADDR] = "ip4.daddr",

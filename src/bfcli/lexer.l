@@ -178,10 +178,10 @@ meta\.flow_hash     { BEGIN(STATE_MATCHER_META_FLOW_HASH); yylval.sval = strdup(
     }
 }
 
-meta\.ratelimit  { BEGIN(STATE_MATCHER_META_LIMIT); yylval.sval = strdup(yytext); return MATCHER_TYPE; }
+meta\.limit  { BEGIN(STATE_MATCHER_META_LIMIT); yylval.sval = strdup(yytext); return MATCHER_TYPE; }
 <STATE_MATCHER_META_LIMIT>{
     (eq) { yylval.sval = strdup(yytext); return MATCHER_OP; }
-    {int}|[0-9a-zA-Z-]+ { // NTODO: add unit handling
+    {int}\/[a-zA-Z] {
         BEGIN(INITIAL);
         yylval.sval = strdup(yytext);
         return RAW_PAYLOAD;

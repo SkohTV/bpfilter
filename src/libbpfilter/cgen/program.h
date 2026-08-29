@@ -245,12 +245,6 @@ struct bf_program
 
 #define _free_bf_program_ __attribute__((__cleanup__(bf_program_free)))
 
-struct bf_ratelimit
-{
-    uint64_t current;
-    uint64_t last_time;
-};
-
 /**
  * @brief Allocate and initialize a new `bf_program` object.
  *

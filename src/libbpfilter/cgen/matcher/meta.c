@@ -157,13 +157,18 @@ _bf_matcher_generate_meta_flow_probability(struct bf_program *program,
     return 0;
 }
 
-static int _bf_matcher_generate_meta_ratelimit(struct bf_program *program,
+static int _bf_matcher_generate_meta_limit(struct bf_program *program,
                                                const struct bf_matcher *matcher)
 {
-    uint32_t ratelimit = *(uint32_t *)bf_matcher_payload(matcher);
+    uint32_t tmp = *(uint32_t *)bf_matcher_payload(matcher);
+    uint16_t ratelimit = tmp;
+    uint8_t letter = tmp >> 16;
 
     EMIT_LOAD_RATELIMIT_FD_FIXUP(program, BPF_REG_1);
     EMIT(program, BPF_MOV32_IMM(BPF_REG_2, ratelimit));
+    EMIT(program, BPF_MOV32_IMM(BPF_REG_3, letter));
+    EMIT(program,
+         BPF_MOV32_IMM(BPF_REG_4, bf_program_chain_counter_idx(program)));
     EMIT_FIXUP_ELFSTUB(program, BF_ELFSTUB_RATELIMIT);
 
     if (bf_matcher_get_negate(matcher)) {
@@ -197,8 +202,8 @@ int bf_matcher_generate_meta(struct bf_program *program,
         return _bf_matcher_generate_meta_port(program, matcher);
     case BF_MATCHER_META_FLOW_PROBABILITY:
         return _bf_matcher_generate_meta_flow_probability(program, matcher);
-    case BF_MATCHER_META_RATELIMIT:
-        return _bf_matcher_generate_meta_ratelimit(program, matcher);
+    case BF_MATCHER_META_LIMIT:
+        return _bf_matcher_generate_meta_limit(program, matcher);
     case BF_MATCHER_META_MARK:
     case BF_MATCHER_META_FLOW_HASH:
         return bf_err_r(-ENOTSUP,
