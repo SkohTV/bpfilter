@@ -161,15 +161,15 @@ static int _bf_matcher_generate_meta_limit(struct bf_program *program,
                                                const struct bf_matcher *matcher)
 {
     uint32_t tmp = *(uint32_t *)bf_matcher_payload(matcher);
-    uint16_t ratelimit = tmp;
+    uint16_t limit = tmp;
     uint8_t letter = tmp >> 16;
 
-    EMIT_LOAD_RATELIMIT_FD_FIXUP(program, BPF_REG_1);
-    EMIT(program, BPF_MOV32_IMM(BPF_REG_2, ratelimit));
+    EMIT_LOAD_LIMIT_FD_FIXUP(program, BPF_REG_1);
+    EMIT(program, BPF_MOV32_IMM(BPF_REG_2, limit));
     EMIT(program, BPF_MOV32_IMM(BPF_REG_3, letter));
     EMIT(program,
          BPF_MOV32_IMM(BPF_REG_4, bf_program_chain_counter_idx(program)));
-    EMIT_FIXUP_ELFSTUB(program, BF_ELFSTUB_RATELIMIT);
+    EMIT_FIXUP_ELFSTUB(program, BF_ELFSTUB_LIMIT);
 
     if (bf_matcher_get_negate(matcher)) {
         EMIT_FIXUP_JMP_NEXT_RULE(program,

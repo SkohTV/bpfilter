@@ -61,7 +61,7 @@
 #define _BF_COUNTER_MAP_NAME "bf_cmap"
 #define _BF_PRINTER_MAP_NAME "bf_pmap"
 #define _BF_LOG_MAP_NAME "bf_lmap"
-#define _BF_RATELIMIT_MAP_NAME "bf_rmap"
+#define _BF_LIMIT_MAP_NAME "bf_rmap"
 
 static inline size_t _bf_round_next_power_of_2(size_t value)
 {
@@ -434,7 +434,7 @@ static int _bf_program_fixup(struct bf_program *program,
             insn_type = BF_FIXUP_INSN_IMM;
             value = program->handle->lmap->fd;
             break;
-        case BF_FIXUP_TYPE_RATELIMIT_MAP_FD:
+        case BF_FIXUP_TYPE_LIMIT_MAP_FD:
             insn_type = BF_FIXUP_INSN_IMM;
             value = program->handle->rmap->fd;
             break;
@@ -905,7 +905,7 @@ static int _bf_program_load_log_map(struct bf_program *program)
     return 0;
 }
 
-static int _bf_program_load_ratelimit_map(struct bf_program *program)
+static int _bf_program_load_limit_map(struct bf_program *program)
 {
     _cleanup_free_ void *pstr = NULL;
     uint32_t key = 0;
@@ -914,19 +914,19 @@ static int _bf_program_load_ratelimit_map(struct bf_program *program)
 
     assert(program);
 
-    r = bf_map_new(&program->handle->rmap, _BF_RATELIMIT_MAP_NAME,
-                   BF_MAP_TYPE_RATELIMIT, sizeof(uint32_t),
+    r = bf_map_new(&program->handle->rmap, _BF_LIMIT_MAP_NAME,
+                   BF_MAP_TYPE_LIMIT, sizeof(uint32_t),
                    sizeof(struct bf_ratelimit), 1);
     if (r)
-        return bf_err_r(r, "failed to create the ratelimit bf_map object");
+        return bf_err_r(r, "failed to create the rate limit bf_map object");
 
     r = bf_map_set_elem(program->handle->rmap, &key, &val);
     if (r)
-        return bf_err_r(r, "failed to set ratelimit map elem");
+        return bf_err_r(r, "failed to set rate limit map elem");
 
-    r = _bf_program_fixup(program, BF_FIXUP_TYPE_RATELIMIT_MAP_FD);
+    r = _bf_program_fixup(program, BF_FIXUP_TYPE_LIMIT_MAP_FD);
     if (r)
-        return bf_err_r(r, "failed to fixup ratelimit map FD");
+        return bf_err_r(r, "failed to fixup rate limit map FD");
 
     return 0;
 }
@@ -1032,9 +1032,9 @@ int bf_program_load(struct bf_program *prog)
     if (r)
         return bf_err_r(r, "failed to load the log map");
 
-    r = _bf_program_load_ratelimit_map(prog);
+    r = _bf_program_load_limit_map(prog);
     if (r)
-        return bf_err_r(r, "failed to load the ratelimit map");
+        return bf_err_r(r, "failed to load the rate limit map");
 
     if (bf_ctx_is_verbose(BF_VERBOSE_DEBUG)) {
         log_buf = malloc(_BF_LOG_BUF_SIZE);

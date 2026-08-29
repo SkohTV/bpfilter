@@ -13,7 +13,7 @@ __u8 bf_ratelimit(void *map, const __u16 limit, __u8 letter)
 {
     struct bf_ratelimit *ratelimit;
     __u64 current_time_ns = bpf_ktime_get_ns();
-    __u32 key = 0; // NTODO: should not be 0, dynamic
+    __u32 key = 0; // NTODO: should not be 0, but dynamic (WIP)
 
     ratelimit = bpf_map_lookup_elem(map, &key);
     if (!ratelimit) {

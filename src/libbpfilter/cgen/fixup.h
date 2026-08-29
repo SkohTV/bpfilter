@@ -39,8 +39,8 @@ enum bf_fixup_type
     BF_FIXUP_TYPE_LOG_MAP_FD,
     /// Set a set map file descriptor in the @c BPF_LD_MAP_FD instruction.
     BF_FIXUP_TYPE_SET_MAP_FD,
-    /// Set the ratelimit map file descriptor in the @c BPF_LD_MAP_FD instruction.
-    BF_FIXUP_TYPE_RATELIMIT_MAP_FD,
+    /// Set the limit map file descriptor in the @c BPF_LD_MAP_FD instruction.
+    BF_FIXUP_TYPE_LIMIT_MAP_FD,
     /// Call an ELF stub.
     BF_FIXUP_ELFSTUB_CALL,
     _BF_FIXUP_TYPE_MAX

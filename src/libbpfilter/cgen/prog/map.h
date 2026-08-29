@@ -22,7 +22,7 @@ enum bf_map_type
     BF_MAP_TYPE_LOG,
     BF_MAP_TYPE_SET,
     BF_MAP_TYPE_CTX,
-    BF_MAP_TYPE_RATELIMIT,
+    BF_MAP_TYPE_LIMIT,
     _BF_MAP_TYPE_MAX,
 };
 
