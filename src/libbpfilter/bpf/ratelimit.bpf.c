@@ -24,6 +24,9 @@ __u8 bf_ratelimit(void *map, const __u32 limit)
         return 1;
     }
 
+    bpf_printk("HEYYYYY %d", ratelimit->current);
+    bpf_printk("TIME IS %d", current_time);
+
     if (current_time != ratelimit->last_time)
         ratelimit->current = 0;
     
