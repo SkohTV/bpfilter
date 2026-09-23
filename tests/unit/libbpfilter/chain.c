@@ -27,14 +27,14 @@ static void new_and_free(void **state)
 
     (void)state;
 
-    assert_ok(bf_chain_new(&chain, "name", 0, 0, NULL, NULL));
+    assert_ok(bf_chain_new(&chain, "name", 0, 0, NULL, NULL, NULL));
     bf_chain_free(&chain);
     assert_null(chain);
 
     assert_ok(bf_list_add_tail(&rules, bft_rule_dummy(0)));
     assert_ok(bf_list_add_tail(&rules, bft_rule_dummy(0)));
 
-    assert_ok(bf_chain_new(&chain, "name", 0, 0, NULL, &rules));
+    assert_ok(bf_chain_new(&chain, "name", 0, 0, NULL, &rules, NULL));
     bf_list_foreach (&chain->rules, rule_node) {
         assert_int_equal(
             i++, ((struct bf_rule *)(bf_list_node_get_data(rule_node)))->index);
@@ -139,7 +139,7 @@ static void mixed_enabled_disabled_log_flag(void **state)
     assert_ok(bf_list_add_tail(&rules, r1));
 
     assert_ok(bf_chain_new(&chain, "test", BF_HOOK_TC_EGRESS, BF_VERDICT_ACCEPT,
-                           &sets, &rules));
+                           &sets, &rules, NULL));
 
     assert_true(r0->disabled);
     assert_false(r1->disabled);
@@ -183,7 +183,7 @@ static void apply_set_delta_updates_derived_state(void **state)
     assert_ok(bf_list_add_tail(&rules, rule));
 
     assert_ok(bf_chain_new(&chain, "test", BF_HOOK_XDP, BF_VERDICT_ACCEPT,
-                           &sets, &rules));
+                           &sets, &rules, NULL));
     assert_true(rule->disabled);
     assert_int_equal(chain->flags, 0);
 
@@ -230,7 +230,7 @@ static void incompatible_matchers_disable_rule(void **state)
         assert_ok(bf_list_add_tail(&rules, rule));
 
         assert_ok(bf_chain_new(&chain, "test", BF_HOOK_TC_EGRESS,
-                               BF_VERDICT_ACCEPT, NULL, &rules));
+                               BF_VERDICT_ACCEPT, NULL, &rules, NULL));
         assert_true(rule->disabled);
     }
 
@@ -250,7 +250,7 @@ static void incompatible_matchers_disable_rule(void **state)
         assert_ok(bf_list_add_tail(&rules, rule));
 
         assert_ok(bf_chain_new(&chain, "test", BF_HOOK_TC_EGRESS,
-                               BF_VERDICT_ACCEPT, NULL, &rules));
+                               BF_VERDICT_ACCEPT, NULL, &rules, NULL));
         assert_true(rule->disabled);
     }
 
@@ -281,7 +281,7 @@ static void incompatible_matchers_disable_rule(void **state)
         assert_ok(bf_list_add_tail(&rules, rule));
 
         assert_ok(bf_chain_new(&chain, "test", BF_HOOK_TC_EGRESS,
-                               BF_VERDICT_ACCEPT, &sets, &rules));
+                               BF_VERDICT_ACCEPT, &sets, &rules, NULL));
         assert_true(rule->disabled);
     }
 
@@ -301,7 +301,7 @@ static void incompatible_matchers_disable_rule(void **state)
         assert_ok(bf_list_add_tail(&rules, rule));
 
         assert_ok(bf_chain_new(&chain, "test", BF_HOOK_TC_EGRESS,
-                               BF_VERDICT_ACCEPT, NULL, &rules));
+                               BF_VERDICT_ACCEPT, NULL, &rules, NULL));
         assert_false(rule->disabled);
     }
 
@@ -322,7 +322,7 @@ static void incompatible_matchers_disable_rule(void **state)
         assert_ok(bf_list_add_tail(&rules, rule));
 
         assert_ok(bf_chain_new(&chain, "test", BF_HOOK_TC_EGRESS,
-                               BF_VERDICT_ACCEPT, NULL, &rules));
+                               BF_VERDICT_ACCEPT, NULL, &rules, NULL));
         assert_false(rule->disabled);
     }
 }
@@ -334,13 +334,13 @@ static void policy_validation(void **state)
     (void)state;
 
     assert_ok(bf_chain_new(&chain, "next", BF_HOOK_TC_EGRESS, BF_VERDICT_NEXT,
-                           NULL, NULL));
+                           NULL, NULL, NULL));
     bf_chain_free(&chain);
 
     assert_err(bf_chain_new(&chain, "bad", BF_HOOK_TC_EGRESS,
-                            BF_VERDICT_CONTINUE, NULL, NULL));
+                            BF_VERDICT_CONTINUE, NULL, NULL, NULL));
     assert_err(bf_chain_new(&chain, "bad", BF_HOOK_TC_EGRESS,
-                            BF_VERDICT_REDIRECT, NULL, NULL));
+                            BF_VERDICT_REDIRECT, NULL, NULL, NULL));
 }
 
 static void set_component_unsupported_hook(void **state)
@@ -368,7 +368,7 @@ static void set_component_unsupported_hook(void **state)
     assert_ok(bf_list_add_tail(&rules, rule));
 
     assert_err(bf_chain_new(&chain, "test", BF_HOOK_CGROUP_SOCK_ADDR_CONNECT4,
-                            BF_VERDICT_ACCEPT, &sets, &rules));
+                            BF_VERDICT_ACCEPT, &sets, &rules, NULL));
 
     // Supported component: ip4.daddr on CONNECT4 should succeed.
     bf_list_clean(&sets);
@@ -386,7 +386,7 @@ static void set_component_unsupported_hook(void **state)
     assert_ok(bf_list_add_tail(&rules, rule));
 
     assert_ok(bf_chain_new(&chain, "test", BF_HOOK_CGROUP_SOCK_ADDR_CONNECT4,
-                           BF_VERDICT_ACCEPT, &sets, &rules));
+                           BF_VERDICT_ACCEPT, &sets, &rules, NULL));
 }
 
 static void sock_addr_log_flag(void **state)
@@ -402,7 +402,7 @@ static void sock_addr_log_flag(void **state)
     assert_ok(bf_list_add_tail(&rules, r0));
 
     assert_ok(bf_chain_new(&chain, "test", BF_HOOK_CGROUP_SOCK_ADDR_CONNECT4,
-                           BF_VERDICT_ACCEPT, NULL, &rules));
+                           BF_VERDICT_ACCEPT, NULL, &rules, NULL));
 
     assert_false(r0->disabled);
     assert_int_not_equal(chain->flags & BF_FLAG(BF_CHAIN_LOG), 0);
@@ -425,7 +425,7 @@ static void invalid_log_opts_for_hook(void **state)
 
         assert_err(bf_chain_new(&chain, "test",
                                 BF_HOOK_CGROUP_SOCK_ADDR_CONNECT4,
-                                BF_VERDICT_ACCEPT, NULL, &rules));
+                                BF_VERDICT_ACCEPT, NULL, &rules, NULL));
     }
 
     {
@@ -441,7 +441,7 @@ static void invalid_log_opts_for_hook(void **state)
 
         assert_err(bf_chain_new(&chain, "test",
                                 BF_HOOK_CGROUP_SOCK_ADDR_CONNECT4,
-                                BF_VERDICT_ACCEPT, NULL, &rules));
+                                BF_VERDICT_ACCEPT, NULL, &rules, NULL));
     }
 
     {
@@ -456,7 +456,7 @@ static void invalid_log_opts_for_hook(void **state)
         assert_ok(bf_list_add_tail(&rules, r0));
 
         assert_err(bf_chain_new(&chain, "test", BF_HOOK_XDP, BF_VERDICT_ACCEPT,
-                                NULL, &rules));
+                                NULL, &rules, NULL));
     }
 }
 
